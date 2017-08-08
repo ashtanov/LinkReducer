@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using LinkReducer.Utils;
+using LinkReducer.Models;
 
 namespace LinkReducer
 {
@@ -31,6 +32,11 @@ namespace LinkReducer
             // Add framework services.
             services.AddMvc();
             services.AddTransient<IStringGenerator, RandomStringGenerator>();
+            services.Configure<Settings>(options =>
+            {
+                options.ConnectionString = Configuration.GetSection("MongoConnection:ConnectionString").Value;
+                options.Database = Configuration.GetSection("MongoConnection:Database").Value;
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

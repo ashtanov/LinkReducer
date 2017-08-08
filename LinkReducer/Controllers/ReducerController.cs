@@ -48,7 +48,13 @@ namespace LinkReducer.Controllers
                 if (!Guid.TryParse(Request.Cookies[COOKIE_NAME], out Guid id))
                 {
                     id = Guid.NewGuid();
-                    Response.Cookies.Append(COOKIE_NAME, id.ToString("N"));
+                    Response.Cookies.Append(
+                        COOKIE_NAME, 
+                        id.ToString("N"),
+                        new Microsoft.AspNetCore.Http.CookieOptions
+                        {
+                            Expires = new DateTimeOffset(DateTime.Now.AddDays(30))
+                        });
                 }
                 return id;
 
