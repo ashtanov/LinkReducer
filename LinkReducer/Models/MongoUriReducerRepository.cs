@@ -3,7 +3,6 @@ using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace LinkReducer.Models
 {
@@ -36,20 +35,35 @@ namespace LinkReducer.Models
 
         public KeyObject GetOrInsertShortKey(string fullUri, Guid userId, string shortKey)
         {
-            //добавить уникальный индекс на ключи, ловить исключения, возвращать ошибку
-            var filter = Builders<UriEntity>.Filter.Eq(x => x.FullUri, fullUri);
-            var update = Builders<UriEntity>
-                .Update
-                .AddToSet(x => x.UserIds, userId)
-                .SetOnInsert(x => x.FullUri, fullUri)
-                .SetOnInsert(x => x.Hits, 1)
-                .SetOnInsert(x => x.ShortKey, shortKey);
-            var options = new FindOneAndUpdateOptions<UriEntity, KeyObject>
+            KeyObject result = new KeyObject { Success = true };
+            try
             {
-                Projection = Builders<UriEntity>.Projection.Expression(x => new KeyObject { ShortKey = x.ShortKey }),
-                IsUpsert = true,
-            };
-            return _context.UriEntities.FindOneAndUpdate(filter, update, options);
+                var filter = Builders<UriEntity>.Filter.Eq(x => x.FullUri, fullUri);
+                var update = Builders<UriEntity>
+                    .Update
+                    .AddToSet(x => x.UserIds, userId)
+                    .Inc(x => x.Hits, 1)
+                    .SetOnInsert(x => x.FullUri, fullUri)
+                    .SetOnInsert(x => x.ShortKey, shortKey);
+                var options = new FindOneAndUpdateOptions<UriEntity, string>
+                {
+                    Projection = Builders<UriEntity>.Projection.Expression(x => x.ShortKey),
+                    IsUpsert = true
+                };
+                var resultKey = _context.UriEntities.FindOneAndUpdate(filter, update, options) ?? shortKey;
+                result.ShortKey = resultKey;
+            }
+            catch (MongoCommandException ex) when (ex.Code == 11000)
+            {
+                result.Success = false;
+            }
+            return result;
+
+        }
+
+        public void Init()
+        {
+            _context.InitDatabase();
         }
     }
 }

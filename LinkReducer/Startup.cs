@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using LinkReducer.Models;
+using LinkReducer.Utils;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using LinkReducer.Utils;
-using LinkReducer.Models;
 
 namespace LinkReducer
 {
@@ -36,6 +32,10 @@ namespace LinkReducer
             {
                 options.ConnectionString = Configuration.GetSection("MongoConnection:ConnectionString").Value;
                 options.Database = Configuration.GetSection("MongoConnection:Database").Value;
+                if(!int.TryParse(Configuration.GetSection("Options:KeyLettersCount").Value, out int lc))
+                    lc = 6;
+                options.KeyLettersCount = lc;
+
             });
             services.AddTransient<IUriReducerRepository, MongoUriReducerRepository>();
         }
@@ -47,6 +47,8 @@ namespace LinkReducer
             loggerFactory.AddDebug();
 
             app.UseMvc();
+            var context = app.ApplicationServices.GetService<IUriReducerRepository>();
+            context.Init();
         }
     }
 }

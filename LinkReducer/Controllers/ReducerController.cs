@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using LinkReducer.Utils;
 using LinkReducer.Models;
+using Microsoft.Extensions.Options;
 
 namespace LinkReducer.Controllers
 {
@@ -13,13 +14,16 @@ namespace LinkReducer.Controllers
     {
         const string COOKIE_NAME = "_reducer_user_id";
 
-        IStringGenerator _keyGenerator;
-        IUriReducerRepository _repository;
+        private readonly IStringGenerator _keyGenerator;
+        private readonly IUriReducerRepository _repository;
+        private readonly int _currentKeyLength;
 
-        public ReducerController(IStringGenerator generator, IUriReducerRepository repository)
+
+        public ReducerController(IStringGenerator generator, IUriReducerRepository repository, IOptions<Settings> settings)
         {
             _keyGenerator = generator;
             _repository = repository;
+            _currentKeyLength = settings.Value.KeyLettersCount;
         }
 
         [HttpGet]
@@ -37,12 +41,29 @@ namespace LinkReducer.Controllers
         }
 
         [HttpPost]
-        public KeyObject CreateShortKey([FromBody] UriObject fullUri)
+        public string CreateShortKeyPost([FromBody] UriObject fullUri)
+        {
+            return CreateShortKeyInternal(fullUri.Uri).ShortKey;
+        }
+
+        [HttpGet("create")]
+        public string CreateShortKeyGet([FromQuery] string uri)
+        {
+            return CreateShortKeyInternal(uri).ShortKey;
+        }
+
+        private KeyObject CreateShortKeyInternal(string fullUri)
         {
             var user = UserId;
-            var key = new KeyObject { ShortKey = _keyGenerator.GenerateString(6) }; //TODO: обработать случай, если такой ключ уже создан
-            var dbkey = _repository.GetOrInsertShortKey(fullUri.FullUri, user, key.ShortKey); 
-            return dbkey ?? key;
+            var key = _keyGenerator.GenerateString(_currentKeyLength);
+            KeyObject uniqKey;
+
+            do
+            {
+                uniqKey = _repository.GetOrInsertShortKey(fullUri, user, key);
+            } while (!uniqKey.Success);
+            
+            return uniqKey;
         }
 
         private Guid UserId
