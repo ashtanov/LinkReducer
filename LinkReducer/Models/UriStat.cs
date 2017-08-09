@@ -1,15 +1,12 @@
 ﻿using System;
-using MongoDB.Bson;
 using System.Collections.Generic;
-using MongoDB.Bson.Serialization.Attributes;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace LinkReducer.Models
 {
-    public class UriEntity
+    public class UriStat
     {
-        [BsonId]
-        public ObjectId Id { get; set; }
-        public List<Guid> UserIds { get; set; }
         public string FullUri { get; set; }
         public string ShortKey { get; set; }
         public int Hits { get; set; }

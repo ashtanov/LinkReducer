@@ -11,6 +11,12 @@ namespace LinkReducer.Models
     {
         private readonly IMongoDatabase _database = null;
 
+        public ReducerContext(Settings settings)
+        {
+            var client = new MongoClient(settings.ConnectionString);
+            if (client != null)
+                _database = client.GetDatabase(settings.Database);
+        }
         public ReducerContext(IOptions<Settings> settings)
         {
             var client = new MongoClient(settings.Value.ConnectionString);
@@ -22,7 +28,7 @@ namespace LinkReducer.Models
         {
             get
             {
-                return _database.GetCollection<UriEntity>("UriEntity");
+                return _database.GetCollection<UriEntity>("UriEntities");
             }
         }
     }

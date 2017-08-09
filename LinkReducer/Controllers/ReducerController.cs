@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using LinkReducer.Utils;
+using LinkReducer.Models;
 
 namespace LinkReducer.Controllers
 {
@@ -13,32 +14,35 @@ namespace LinkReducer.Controllers
         const string COOKIE_NAME = "_reducer_user_id";
 
         IStringGenerator _keyGenerator;
+        IUriReducerRepository _repository;
 
-        public ReducerController(IStringGenerator generator)
+        public ReducerController(IStringGenerator generator, IUriReducerRepository repository)
         {
             _keyGenerator = generator;
+            _repository = repository;
         }
 
         [HttpGet]
-        public IEnumerable<string> GetUriHistory()
+        public IEnumerable<UriStat> GetUriHistory()
         {
             var user = UserId;
-            return new string[] { "value1", "value2" };
+            return _repository.GetHistoryList(user);
         }
 
         [HttpGet("{key}")]
-        public string GetFull(int key)
+        public string GetFullUri(string key)
         {
             var user = UserId;
-            return user.ToString();
+            return _repository.GetFullUri(key);
         }
 
         [HttpPost]
-        public string CreateLink([FromBody]string fullUri)
+        public KeyObject CreateShortKey([FromBody] UriObject fullUri)
         {
             var user = UserId;
-            var key = _keyGenerator.GenerateString(6);
-            return key;
+            var key = new KeyObject { ShortKey = _keyGenerator.GenerateString(6) }; //TODO: обработать случай, если такой ключ уже создан
+            var dbkey = _repository.GetOrInsertShortKey(fullUri.FullUri, user, key.ShortKey); 
+            return dbkey ?? key;
         }
 
         private Guid UserId

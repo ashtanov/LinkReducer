@@ -37,6 +37,7 @@ namespace LinkReducer
                 options.ConnectionString = Configuration.GetSection("MongoConnection:ConnectionString").Value;
                 options.Database = Configuration.GetSection("MongoConnection:Database").Value;
             });
+            services.AddTransient<IUriReducerRepository, MongoUriReducerRepository>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
